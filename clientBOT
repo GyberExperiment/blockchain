@@ -1,0 +1,30 @@
+import logging
+from pyrogram import Client
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+logging.basicConfig(level=logging.INFO)
+
+api_id = "23938518"  # Замените на ваш Telegram API ID
+api_hash = "330857549594e3038cd4b4a324ce5e14"  # Замените на ваш Telegram API Hash
+
+model_name = "ai-forever/ruGPT-3.5-13B"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
+
+app = Client("my_bot", api_id=api_id, api_hash=api_hash)
+
+@app.on_message()
+def echo(client, message):
+    text = message.text
+    
+    encoded_input = tokenizer(text, return_tensors='pt').to(device)
+    output = model.generate(**encoded_input, max_length=256)
+    
+    response = tokenizer.decode(output[0], skip_special_tokens=True)
+    
+    message.reply_text(response)
+    
+app.run()
